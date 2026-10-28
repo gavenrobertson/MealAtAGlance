@@ -1,0 +1,114 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/plus-jakarta-sans';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Semantic surface tokens, swapped wholesale for dark mode. */
+:root {
+  --bg: #fbf7f2;
+  --surface: #ffffff;
+  --surface-2: #f6f0e8;
+  --surface-3: #efe7dc;
+  --ink: #1f1b17;
+  --ink-soft: #4b443d;
+  --muted: #8a8077;
+  --line: #ece3d8;
+  --shadow: 32 22 12;
+  color-scheme: light;
+}
+.dark {
+  --bg: #121110;
+  --surface: #1b1917;
+  --surface-2: #24211e;
+  --surface-3: #2e2a26;
+  --ink: #f7f2ec;
+  --ink-soft: #d6cec5;
+  --muted: #9b9188;
+  --line: #2f2b27;
+  --shadow: 0 0 0;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+}
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Bold accent: tomato. */
+  --color-tomato-50: #fff4f1;
+  --color-tomato-100: #ffe5de;
+  --color-tomato-200: #ffc9bb;
+  --color-tomato-300: #ffa58f;
+  --color-tomato-400: #ff7a5c;
+  --color-tomato-500: #ff5a36;
+  --color-tomato-600: #ec4219;
+  --color-tomato-700: #c53412;
+  --color-tomato-800: #9c2c14;
+
+  /* Friendly secondaries: avocado, butter, berry. */
+  --color-avocado-100: #ebf5dc;
+  --color-avocado-300: #b5d98a;
+  --color-avocado-400: #95c75e;
+  --color-avocado-500: #6fa93a;
+  --color-avocado-600: #568a2a;
+  --color-avocado-800: #36561c;
+  --color-butter-100: #fff5d6;
+  --color-butter-300: #ffdd7a;
+  --color-butter-400: #ffc93d;
+  --color-butter-500: #f2b100;
+  --color-butter-800: #7a5800;
+  --color-berry-100: #f6e8fd;
+  --color-berry-300: #d9a6f2;
+  --color-berry-400: #c27ce8;
+  --color-berry-500: #a655d4;
+  --color-berry-700: #7a2fa3;
+
+  --radius-4xl: 2rem;
+  --shadow-soft: 0 1px 2px rgb(var(--shadow) / 0.04), 0 8px 24px -12px rgb(var(--shadow) / 0.12);
+  --shadow-lift: 0 2px 4px rgb(var(--shadow) / 0.06), 0 18px 40px -16px rgb(var(--shadow) / 0.22);
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+}
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+  ::selection { @apply bg-tomato-200 text-ink; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-tomato-500; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+}
+
+@layer components {
+  .card { @apply rounded-3xl bg-surface border border-line shadow-soft; }
+  .chip { @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold; }
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; color: black; }
+}
