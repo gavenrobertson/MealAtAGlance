@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { GeneratedPlan, LockedMeal, MealSlot, PlannedMeal, WeekPlan } from '../../shared/types';
+import type { GeneratedPlan, LockedMeal, Meal, MealSlot, PlannedMeal, WeekPlan } from '../../shared/types';
 import { DAY_LABELS, MEAL_SLOTS } from '../../shared/types';
 import { api } from '../lib/api';
 import { uid } from '../lib/format';
@@ -25,6 +25,10 @@ interface PlanState {
   regenerateMeal: (dayIndex: number, slot: MealSlot, hint?: string) => Promise<void>;
   toggleLock: (dayIndex: number, slot: MealSlot) => void;
   removeMeal: (dayIndex: number, slot: MealSlot) => void;
+  /** Put a specific meal (e.g. a picked idea) into one day/slot. */
+  setMeal: (dayIndex: number, slot: MealSlot, meal: Meal, source: WeekPlan['source']) => void;
+  /** Fill the week from picked ideas: each slot's picks rotate across unlocked days. */
+  applyPicks: (picks: Partial<Record<MealSlot, Meal[]>>, source: WeekPlan['source']) => void;
   setWeekServings: (n: number) => void;
   setDayServings: (dayIndex: number, n: number | undefined) => void;
   setMealServings: (dayIndex: number, slot: MealSlot, n: number | undefined) => void;
@@ -71,6 +75,19 @@ function fromGenerated(gen: GeneratedPlan, request: string, previous: WeekPlan |
       }
       return { label, meals };
     }),
+  };
+}
+
+function emptyPlan(servings: number, source: WeekPlan['source']): WeekPlan {
+  return {
+    id: uid(),
+    name: 'My Picks Week',
+    notes: 'Built from meal ideas you picked.',
+    request: usePrefs.getState().draftRequest,
+    createdAt: Date.now(),
+    weekServings: servings,
+    source,
+    days: DAY_LABELS.map((label) => ({ label, meals: {} })),
   };
 }
 
@@ -160,6 +177,33 @@ export const usePlan = create<PlanState>()(
 
         toggleLock: (d, slot) => updateMeal(d, slot, (pm) => ({ ...pm, locked: !pm.locked })),
         removeMeal: (d, slot) => updateMeal(d, slot, () => undefined),
+
+        setMeal(dayIndex, slot, meal, source) {
+          const plan = get().plan ?? emptyPlan(usePrefs.getState().prefs.householdServings, source);
+          const days = plan.days.map((d, i) => {
+            if (i !== dayIndex) return d;
+            const prev = d.meals[slot];
+            return { ...d, meals: { ...d.meals, [slot]: { meal: { ...meal, id: uid() }, locked: false, servings: prev?.servings } } };
+          });
+          set({ plan: { ...plan, days } });
+        },
+
+        applyPicks(picks, source) {
+          const plan = get().plan ?? emptyPlan(usePrefs.getState().prefs.householdServings, source);
+          const days = plan.days.map((d) => ({ ...d, meals: { ...d.meals } }));
+          for (const slot of MEAL_SLOTS) {
+            const list = picks[slot];
+            if (!list?.length) continue;
+            let n = 0;
+            for (const day of days) {
+              const prev = day.meals[slot];
+              if (prev?.locked) continue;
+              // Fresh id per placement so each day's copy is independent (servings, locks, swaps).
+              day.meals[slot] = { meal: { ...structuredClone(list[n++ % list.length]), id: uid() }, locked: false, servings: prev?.servings };
+            }
+          }
+          set({ plan: { ...plan, days } });
+        },
         setMealServings: (d, slot, n) => updateMeal(d, slot, (pm) => ({ ...pm, servings: n === undefined ? undefined : clampServings(n) })),
 
         setWeekServings: (n) => set((s) => (s.plan ? { plan: { ...s.plan, weekServings: clampServings(n) } } : s)),

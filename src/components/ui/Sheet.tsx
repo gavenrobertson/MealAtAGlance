@@ -14,9 +14,11 @@ interface Props {
   variant?: 'side' | 'center';
   footer?: ReactNode;
   wide?: boolean;
+  /** Extra-wide dialog for browsing grids. */
+  xl?: boolean;
 }
 
-export function Sheet({ open, onClose, title, subtitle, children, variant = 'center', footer, wide }: Props) {
+export function Sheet({ open, onClose, title, subtitle, children, variant = 'center', footer, wide, xl }: Props) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -38,7 +40,7 @@ export function Sheet({ open, onClose, title, subtitle, children, variant = 'cen
           <motion.div
             className={clsx(
               'relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-4xl bg-surface shadow-lift sm:rounded-4xl',
-              side ? 'sm:fixed sm:inset-y-3 sm:right-3 sm:max-h-none sm:w-[440px]' : wide ? 'sm:max-w-2xl' : 'sm:max-w-lg',
+              side ? 'sm:fixed sm:inset-y-3 sm:right-3 sm:max-h-none sm:w-[440px]' : xl ? 'sm:max-w-5xl' : wide ? 'sm:max-w-2xl' : 'sm:max-w-lg',
             )}
             initial={side ? { x: 40, opacity: 0 } : { y: 40, opacity: 0, scale: 0.98 }}
             animate={{ x: 0, y: 0, opacity: 1, scale: 1 }}

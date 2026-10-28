@@ -1,4 +1,4 @@
-import type { GeneratedPlan, Meal, MealRequest, MealSlot, PlanRequest, Preferences } from '../../shared/types';
+import type { GeneratedPlan, IdeasRequest, Meal, MealRequest, MealSlot, PlanRequest, Preferences } from '../../shared/types';
 import { DAY_LABELS, MEAL_SLOTS } from '../../shared/types';
 import { RECIPES, type Allergen, type DemoRecipe, type Protein } from '../data/recipes';
 import { newMealId } from './claude';
@@ -16,6 +16,8 @@ interface Constraints {
   quickMinutes: number;
   dinnerMinutes: number;
   targetCostPerServing: number;
+  /** Favor the cheapest recipes. */
+  cheap: boolean;
 }
 
 const MEAT: Protein[] = ['chicken', 'turkey', 'beef', 'pork'];
@@ -30,6 +32,7 @@ function deriveConstraints(prefs: Preferences, text: string): Constraints {
     quickMinutes: prefs.quickMealMinutes,
     dinnerMinutes: prefs.maxCookMinutes,
     targetCostPerServing: 0,
+    cheap: false,
   };
   const diets = new Set(prefs.diets);
   const has = (re: RegExp) => re.test(t);
@@ -55,6 +58,7 @@ function deriveConstraints(prefs: Preferences, text: string): Constraints {
   if (has(/low[- ]carb|keto/)) c.prefer.add('low-carb');
   if (has(/quick|fast|easy|simple/)) c.prefer.add('quick');
   if (has(/meal[- ]prep|batch/)) c.prefer.add('meal-prep');
+  if (has(/cheap|low[- ]cost|budget|inexpensive|frugal/)) c.cheap = true;
 
   const budget = Number(t.match(/\$\s?(\d{2,4})/)?.[1]) || prefs.weeklyBudget;
   const mealsPerDay = Math.max(1, MEAL_SLOTS.filter((s) => prefs.slots[s]).length);
@@ -75,6 +79,7 @@ function score(r: DemoRecipe, c: Constraints, rand: () => number): number {
   const total = r.prepMinutes + r.cookMinutes;
   const limit = r.slot === 'dinner' ? c.dinnerMinutes : c.quickMinutes;
   if (total > limit) s -= ((total - limit) / Math.max(10, limit)) * 3;
+  if (c.cheap) s += Math.max(0, 3 - r.costPerServing) * 1.5;
   if (r.costPerServing > c.targetCostPerServing * 1.25) s -= (r.costPerServing / c.targetCostPerServing - 1) * 3;
   return s;
 }
@@ -85,8 +90,8 @@ function seeded(seed: number) {
 }
 
 function toMeal(r: DemoRecipe): Meal {
-  const { protein: _p, allergens: _a, costPerServing: _c, ...meal } = r;
-  return { ...structuredClone(meal), id: newMealId() };
+  const { protein: _p, allergens: _a, costPerServing, ...meal } = r;
+  return { ...structuredClone(meal), estCostPerServing: costPerServing, id: newMealId() };
 }
 
 /** How many distinct recipes to rotate per slot: real meal-preppers repeat lunches and breakfasts. */
@@ -128,4 +133,14 @@ export function demoMeal(req: MealRequest): Meal {
   const ranked = rank(req.slot, c, Math.random, new Set(req.avoid));
   const pick = ranked[Math.floor(Math.random() * Math.min(3, ranked.length))] ?? RECIPES.find((r) => r.slot === req.slot)!;
   return toMeal(pick);
+}
+
+const GOAL_WORDS: Record<IdeasRequest['goals'][number], string> = {
+  'low-cost': 'cheap', 'high-protein': 'high-protein', 'meal-prep': 'meal prep', quick: 'quick',
+};
+
+/** Best-matching library recipes for one slot that the user hasn't seen yet. */
+export function demoIdeas(req: IdeasRequest): Meal[] {
+  const c = deriveConstraints(req.preferences, `${req.request} ${req.goals.map((g) => GOAL_WORDS[g]).join(' ')}`);
+  return rank(req.slot, c, seeded(Date.now() % 100000), new Set(req.avoid)).slice(0, req.count).map(toMeal);
 }

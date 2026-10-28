@@ -8,6 +8,7 @@ import { WeekView } from './WeekView';
 import { MealDetailSheet } from './MealDetailSheet';
 import { GeneratingState } from './GeneratingState';
 import { EmptyPlan } from './EmptyPlan';
+import { IdeasSheet } from './IdeasSheet';
 
 export interface MealRef {
   dayIndex: number;
@@ -18,10 +19,12 @@ export function PlanView({ onOpenPrefs, onGoToGroceries }: { onOpenPrefs: () => 
   const plan = usePlan((s) => s.plan);
   const generating = usePlan((s) => s.status.generating);
   const [open, setOpen] = useState<MealRef | null>(null);
+  const [ideas, setIdeas] = useState<{ open: boolean; target: MealRef | null }>({ open: false, target: null });
+  const browseIdeas = (target: MealRef | null = null) => setIdeas({ open: true, target });
 
   return (
     <div className="space-y-5">
-      <PlannerPanel onOpenPrefs={onOpenPrefs} />
+      <PlannerPanel onOpenPrefs={onOpenPrefs} onBrowseIdeas={() => browseIdeas()} />
       <AnimatePresence mode="popLayout">
         {generating ? (
           <motion.div key="gen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -30,15 +33,16 @@ export function PlanView({ onOpenPrefs, onGoToGroceries }: { onOpenPrefs: () => 
         ) : plan ? (
           <motion.div key={plan.id} className="space-y-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <WeekToolbar onGoToGroceries={onGoToGroceries} />
-            <WeekView onOpenMeal={setOpen} />
+            <WeekView onOpenMeal={setOpen} onPickIdea={browseIdeas} />
           </motion.div>
         ) : (
           <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <EmptyPlan />
+            <EmptyPlan onBrowseIdeas={() => browseIdeas()} />
           </motion.div>
         )}
       </AnimatePresence>
-      <MealDetailSheet mealRef={open} onClose={() => setOpen(null)} />
+      <MealDetailSheet mealRef={open} onClose={() => setOpen(null)} onBrowseIdeas={(ref) => (setOpen(null), browseIdeas(ref))} />
+      <IdeasSheet open={ideas.open} target={ideas.target} onClose={() => setIdeas((s) => ({ ...s, open: false }))} />
     </div>
   );
 }

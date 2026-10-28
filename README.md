@@ -49,6 +49,7 @@ Restart `npm run dev`. On startup the API prints which integrations are live:
 ## Features
 
 - **Planner.** Free-text request plus a preferences panel: diets, allergies (hard rules), dislikes, cuisines, weekly budget, dinner time limit, a quick-meal limit for breakfast and lunch, ZIP, and US or metric units.
+- **Browse meal ideas and pick your own.** **Browse ideas** asks Claude for a batch of options per meal (6 at a time, "More ideas" for another batch). Goal chips (💸 Low cost, 💪 High protein, 🥡 Meal prep, ⚡ Quick) steer every batch. Each idea card shows time, calories, protein and estimated cost per serving. Tap the ones you like across breakfast, lunch, dinner and snack, then **Build my week**. Picks rotate through the days (2 lunch picks alternate, meal-prep style), and locked meals are kept. From an empty slot or a meal's detail you can also open the same browser for just that day and tap **Use this**.
 - **Portion controls at three levels.** Week servings, a per-day override and a per-meal override. Overrides are highlighted and can be reset.
 - **Meals per day.** Breakfast, lunch, dinner and snack can each be toggled on or off. Turning a slot off removes it from the list instantly.
 - **Lock or swap any meal.** "Regenerate this one" accepts an optional nudge ("something lighter"). "Regenerate week" keeps locked meals and plans around them.
@@ -69,6 +70,7 @@ Browser (React)                     Server (Hono — Node or Cloudflare Worker)
 ┌───────────────────────────┐       ┌──────────────────────────────────────────────┐
 │ zustand stores            │       │ POST /api/plan          → Claude (streamed)  │
 │  prefs · plan · pantry ·  │ /api  │ POST /api/plan/meal     → Claude / demo lib  │
+│  ideas ·                  │       │ POST /api/ideas         → options to pick    │
 │  shop (persisted locally) │──────▶│ POST /api/stores/:id/match → provider adapter│
 │                           │       │ POST /api/stores/:id/checkout                │
 │ shared/ list math runs    │       │ GET  /api/config        → what's live        │

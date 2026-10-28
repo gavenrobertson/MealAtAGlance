@@ -1,5 +1,5 @@
 import type {
-  CheckoutItem, MatchRequestItem, MatchResponse, Meal, MealRequest, PlanRequest, PlanStreamEvent, ProviderInfo,
+  CheckoutItem, IdeasRequest, MatchRequestItem, MatchResponse, Meal, MealRequest, PlanRequest, PlanStreamEvent, ProviderInfo,
 } from '../../shared/types';
 
 export interface ServerConfig {
@@ -43,6 +43,8 @@ export const api = {
   },
 
   meal: (req: MealRequest, demo: boolean) => post(`/api/plan/meal${q(demo)}`, req).then((r) => json<{ meal: Meal; source: 'ai' | 'demo' }>(r)),
+
+  ideas: (req: IdeasRequest, demo: boolean) => post(`/api/ideas${q(demo)}`, req).then((r) => json<{ ideas: Meal[]; source: 'ai' | 'demo' }>(r)),
 
   match: (provider: string, items: MatchRequestItem[], zipCode: string, demo: boolean) =>
     post(`/api/stores/${provider}/match${q(demo)}`, { items, zipCode: zipCode || undefined }).then((r) => json<MatchResponse>(r)),

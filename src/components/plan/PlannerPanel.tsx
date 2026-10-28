@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Lock, SlidersHorizontal, Sparkles, Users, X } from 'lucide-react';
+import { Lightbulb, Lock, SlidersHorizontal, Sparkles, Users, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { MEAL_SLOTS } from '../../../shared/types';
 import { SLOT_META } from '../../lib/format';
@@ -17,7 +17,7 @@ const EXAMPLES = [
   'Mediterranean, lots of veggies, batch-prep friendly',
 ];
 
-export function PlannerPanel({ onOpenPrefs }: { onOpenPrefs: () => void }) {
+export function PlannerPanel({ onOpenPrefs, onBrowseIdeas }: { onOpenPrefs: () => void; onBrowseIdeas: () => void }) {
   const { prefs, setPrefs, setSlot, draftRequest, setDraftRequest } = usePrefs();
   const { plan, status, generate, cancel, setWeekServings } = usePlan();
   const aiLive = useShop((s) => s.config?.ai.live);
@@ -94,7 +94,11 @@ export function PlannerPanel({ onOpenPrefs }: { onOpenPrefs: () => void }) {
                 <X size={16} /> Cancel
               </Button>
             ) : (
-              <Button variant="primary" size="lg" onClick={submit} disabled={!activeSlots.length} className="ml-auto">
+              <div className="ml-auto flex flex-wrap gap-2">
+              <Button variant="secondary" size="lg" onClick={onBrowseIdeas} disabled={!activeSlots.length} title="Browse meal ideas and pick the ones you want">
+                <Lightbulb size={17} className="text-butter-500" /> Browse ideas
+              </Button>
+              <Button variant="primary" size="lg" onClick={submit} disabled={!activeSlots.length}>
                 <Sparkles size={17} />
                 {plan ? 'Regenerate week' : 'Generate my week'}
                 {lockedCount > 0 && (
@@ -103,6 +107,7 @@ export function PlannerPanel({ onOpenPrefs }: { onOpenPrefs: () => void }) {
                   </span>
                 )}
               </Button>
+              </div>
             )}
           </div>
         </div>

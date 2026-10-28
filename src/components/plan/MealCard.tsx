@@ -1,25 +1,26 @@
 import clsx from 'clsx';
 import { Clock, Flame, Lock, LockOpen, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { MealSlot } from '../../../shared/types';
+import type { MealSlot, PlannedMeal } from '../../../shared/types';
 import { SLOT_META } from '../../lib/format';
 import { usePlan } from '../../store/plan';
 import { Stepper } from '../ui/Stepper';
 
 interface Props {
+  /** Passed in (not read from the store) so the card can still render while animating out after removal. */
+  pm: PlannedMeal;
   dayIndex: number;
   slot: MealSlot;
   pending: boolean;
   onOpen: () => void;
 }
 
-export function MealCard({ dayIndex, slot, pending, onOpen }: Props) {
+export function MealCard({ pm, dayIndex, slot, pending, onOpen }: Props) {
   const plan = usePlan((s) => s.plan)!;
   const { toggleLock, regenerateMeal, setMealServings } = usePlan();
   const day = plan.days[dayIndex];
-  const pm = day.meals[slot]!;
   const { meal } = pm;
-  const servings = pm.servings ?? day.servings ?? plan.weekServings;
+  const servings = pm.servings ?? day?.servings ?? plan.weekServings;
   const meta = SLOT_META[slot];
   const minutes = meal.prepMinutes + meal.cookMinutes;
 

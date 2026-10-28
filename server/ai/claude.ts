@@ -1,9 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { GeneratedPlan, Meal, MealRequest, MealSlot, PlanRequest } from '../../shared/types';
+import type { GeneratedPlan, IdeasRequest, Meal, MealRequest, MealSlot, PlanRequest } from '../../shared/types';
 import { DAY_LABELS } from '../../shared/types';
 import type { Env } from '../env';
-import { SYSTEM_PROMPT, mealUserPrompt, planUserPrompt } from './prompt';
-import { mealZ, planJsonSchema, planZ, singleMealJsonSchema } from './schema';
+import { SYSTEM_PROMPT, ideasUserPrompt, mealUserPrompt, planUserPrompt } from './prompt';
+import { ideasJsonSchema, mealZ, planJsonSchema, planZ, singleMealJsonSchema } from './schema';
 
 const DEFAULT_MODEL = 'claude-opus-5-5';
 
@@ -87,4 +87,16 @@ export async function claudeMeal(env: Env, req: MealRequest): Promise<Meal> {
   const parsed = mealZ.safeParse((json as { meal?: unknown })?.meal);
   if (!parsed.success) throw new PlannerError(`Meal did not match the expected shape: ${parsed.error.issues[0]?.message}`);
   return toMeal(parsed.data, req.slot);
+}
+
+export async function claudeIdeas(env: Env, req: IdeasRequest): Promise<Meal[]> {
+  const json = await streamJson(env, ideasJsonSchema, ideasUserPrompt(req), 'low');
+  const raw = (json as { ideas?: unknown[] })?.ideas ?? [];
+  // Keep every idea that validates; one malformed idea shouldn't sink the batch.
+  const ideas = raw.flatMap((m) => {
+    const parsed = mealZ.safeParse(m);
+    return parsed.success ? [toMeal(parsed.data, req.slot)] : [];
+  });
+  if (!ideas.length) throw new PlannerError('The planner returned no usable ideas. Try again.');
+  return ideas;
 }

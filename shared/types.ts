@@ -47,6 +47,8 @@ export interface Meal {
   steps: string[];
   /** Per serving. */
   macros?: Macros;
+  /** Rough grocery cost per serving in USD (estimate). */
+  estCostPerServing?: number;
   tags: string[];
 }
 
@@ -204,6 +206,19 @@ export interface MealRequest {
   avoid: string[];
   /** Optional nudge for this one meal ("something lighter"). */
   hint?: string;
+}
+
+export const IDEA_GOALS = ['low-cost', 'high-protein', 'meal-prep', 'quick'] as const;
+export type IdeaGoal = (typeof IDEA_GOALS)[number];
+
+export interface IdeasRequest {
+  request: string;
+  preferences: Preferences;
+  slot: MealSlot;
+  count: number;
+  goals: IdeaGoal[];
+  /** Titles already shown, so "more ideas" returns new ones. */
+  avoid: string[];
 }
 
 export interface GeneratedPlan {

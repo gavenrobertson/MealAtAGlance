@@ -2,9 +2,9 @@ import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
 import { z } from 'zod';
 import type { PlanStreamEvent } from '../shared/types';
-import { CATEGORIES, MEAL_SLOTS } from '../shared/types';
-import { PlannerError, claudeMeal, claudePlan } from './ai/claude';
-import { demoMeal, demoPlan } from './ai/demo';
+import { CATEGORIES, IDEA_GOALS, MEAL_SLOTS } from '../shared/types';
+import { PlannerError, claudeIdeas, claudeMeal, claudePlan } from './ai/claude';
+import { demoIdeas, demoMeal, demoPlan } from './ai/demo';
 import { mealZ } from './ai/schema';
 import { isTruthy, type Env } from './env';
 import { PROVIDERS, checkout, getProvider, matchItems, providerInfo } from './providers';
@@ -38,6 +38,14 @@ const mealReqZ = z.object({
   slot: z.enum(MEAL_SLOTS),
   avoid: z.array(z.string().max(200)).max(40),
   hint: z.string().max(500).optional(),
+});
+const ideasReqZ = z.object({
+  request: z.string().max(2000),
+  preferences: prefsZ,
+  slot: z.enum(MEAL_SLOTS),
+  count: z.number().int().min(1).max(10),
+  goals: z.array(z.enum(IDEA_GOALS)).max(IDEA_GOALS.length),
+  avoid: z.array(z.string().max(200)).max(80),
 });
 const matchReqZ = z.object({
   items: z.array(z.object({ key: z.string().max(120), query: z.string().min(1).max(120), category: z.enum(CATEGORIES).catch('other') })).max(200),
@@ -108,6 +116,14 @@ export function createApi() {
     const demo = wantsDemo(c.req.query('demo'));
     const meal = aiLive(c.env, demo) ? await claudeMeal(c.env, req) : demoMeal(req);
     return c.json({ meal, source: aiLive(c.env, demo) ? 'ai' : 'demo' });
+  });
+
+  // A batch of options for one meal slot, for the user to scroll through and pick from.
+  app.post('/ideas', async (c) => {
+    const req = ideasReqZ.parse(await c.req.json());
+    const live = aiLive(c.env, wantsDemo(c.req.query('demo')));
+    const ideas = live ? await claudeIdeas(c.env, req) : demoIdeas(req);
+    return c.json({ ideas, source: live ? 'ai' : 'demo' });
   });
 
   app.post('/stores/:id/match', async (c) => {

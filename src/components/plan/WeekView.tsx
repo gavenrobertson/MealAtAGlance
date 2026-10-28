@@ -14,7 +14,7 @@ import type { MealRef } from './PlanView';
  * 7-column grid on desktop; horizontally swipeable, snap-aligned day cards on mobile.
  * Same DOM for both so state (scroll position aside) is shared.
  */
-export function WeekView({ onOpenMeal }: { onOpenMeal: (ref: MealRef) => void }) {
+export function WeekView({ onOpenMeal, onPickIdea }: { onOpenMeal: (ref: MealRef) => void; onPickIdea: (ref: MealRef) => void }) {
   const plan = usePlan((s) => s.plan)!;
   const scroller = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
@@ -62,16 +62,16 @@ export function WeekView({ onOpenMeal }: { onOpenMeal: (ref: MealRef) => void })
         className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-7 lg:overflow-visible lg:px-0"
       >
         {plan.days.map((_, i) => (
-          <DayColumn key={i} dayIndex={i} onOpenMeal={onOpenMeal} />
+          <DayColumn key={i} dayIndex={i} onOpenMeal={onOpenMeal} onPickIdea={onPickIdea} />
         ))}
       </div>
     </div>
   );
 }
 
-function DayColumn({ dayIndex, onOpenMeal }: { dayIndex: number; onOpenMeal: (ref: MealRef) => void }) {
+function DayColumn({ dayIndex, onOpenMeal, onPickIdea }: { dayIndex: number; onOpenMeal: (ref: MealRef) => void; onPickIdea: (ref: MealRef) => void }) {
   const plan = usePlan((s) => s.plan)!;
-  const { setDayServings, regenerateMeal, status } = usePlan();
+  const { setDayServings, status } = usePlan();
   const slots = usePrefs((s) => s.prefs.slots);
   const day = plan.days[dayIndex];
   const servings = day.servings ?? plan.weekServings;
@@ -115,10 +115,10 @@ function DayColumn({ dayIndex, onOpenMeal }: { dayIndex: number; onOpenMeal: (re
                 exit={{ opacity: 0, scale: 0.94 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
               >
-                <MealCard dayIndex={dayIndex} slot={slot} pending={pending} onOpen={() => onOpenMeal({ dayIndex, slot })} />
+                <MealCard pm={pm} dayIndex={dayIndex} slot={slot} pending={pending} onOpen={() => onOpenMeal({ dayIndex, slot })} />
               </motion.div>
             ) : (
-              <EmptySlot key={`empty-${slot}`} slot={slot} pending={pending} onAdd={() => regenerateMeal(dayIndex, slot)} />
+              <EmptySlot key={`empty-${slot}`} slot={slot} pending={pending} onAdd={() => onPickIdea({ dayIndex, slot })} />
             )}
           </AnimatePresence>
         );

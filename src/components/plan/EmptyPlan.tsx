@@ -4,8 +4,20 @@ const STEPS = [
   { emoji: '🛒', title: 'Shop it', body: 'One merged list, pantry items checked off, priced at real stores.' },
 ];
 
-export function EmptyPlan() {
+export function EmptyPlan({ onBrowseIdeas }: { onBrowseIdeas: () => void }) {
   return (
+    <div className="space-y-3">
+    <button
+      onClick={onBrowseIdeas}
+      className="card flex w-full items-center gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-lift"
+    >
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-butter-100 text-2xl dark:bg-butter-400/15">💡</span>
+      <span className="flex-1">
+        <span className="block font-bold">Rather choose for yourself?</span>
+        <span className="block text-sm text-muted">Browse meal ideas (low cost, high protein, meal prep…), pick the ones you like, and we'll build the week from them.</span>
+      </span>
+      <span className="hidden text-sm font-bold text-tomato-600 sm:block dark:text-tomato-400">Browse ideas →</span>
+    </button>
     <div className="grid gap-3 sm:grid-cols-3">
       {STEPS.map((s, i) => (
         <div key={s.title} className="card flex gap-4 p-5">
@@ -17,6 +29,7 @@ export function EmptyPlan() {
           </div>
         </div>
       ))}
+    </div>
     </div>
   );
 }

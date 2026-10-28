@@ -1,4 +1,4 @@
-import type { MealRequest, MealSlot, PlanRequest, Preferences } from '../../shared/types';
+import type { IdeaGoal, IdeasRequest, MealRequest, MealSlot, PlanRequest, Preferences } from '../../shared/types';
 import { DAY_LABELS, MEAL_SLOTS, UNITS } from '../../shared/types';
 
 export const SYSTEM_PROMPT = `You are the meal-planning engine inside "Meal at a Glance", a weekly meal-prep planner that turns plans into priced grocery lists.
@@ -15,7 +15,7 @@ Planning rules:
 - Stay within the weekly grocery budget for the whole household. Reuse ingredients across meals (a bag of spinach, a pack of chicken) to cut cost and waste, and favor cook-once-eat-twice where it fits.
 - Respect cooking-time limits: breakfast and lunch use the quick-meal limit; dinners use the max cook-time limit (prep + cook).
 - Vary cuisines and proteins across the week; avoid repeating the same dinner.
-- Macros are per serving and should be realistic estimates. Keep steps short (2-5 concise steps).
+- Macros are per serving and should be realistic estimates. estCostPerServing is a realistic US grocery cost per serving. Keep steps short (2-5 concise steps).
 - Pick one fitting food emoji per meal.`;
 
 function describePrefs(p: Preferences): string {
@@ -56,6 +56,27 @@ The overall request for the week was:
 """${req.request.trim() || 'A balanced, tasty week of meals.'}"""
 
 Do not repeat any of these meals already in the plan: ${req.avoid.join('; ') || 'none'}.
+
+My preferences:
+${describePrefs(req.preferences)}`;
+}
+
+export const GOAL_TEXT: Record<IdeaGoal, string> = {
+  'low-cost': 'Low cost: built on cheap staples (beans, lentils, eggs, rice, oats, chicken thighs, frozen veg); aim for about $2.50 per serving or less.',
+  'high-protein': 'High protein: at least 30 g protein per serving for main meals (15 g for snacks).',
+  'meal-prep': 'Meal-prep friendly: batch-cooks well, keeps 4 days in the fridge, and reheats or packs cold nicely.',
+  quick: 'Quick: 20 minutes or less from start to finish.',
+};
+
+export function ideasUserPrompt(req: IdeasRequest): string {
+  const goals = req.goals.map((g) => `- ${GOAL_TEXT[g]}`).join('\n');
+  return `Suggest ${req.count} different ${req.slot} ideas I can scroll through and pick from.
+Make them genuinely varied (different proteins, cuisines and formats) so there is a real choice, and give each a clear, appetizing title.
+${goals ? `\nEvery idea must fit these goals:\n${goals}\n` : ''}
+What I'm looking for:
+"""${req.request.trim() || 'Tasty, practical meals.'}"""
+
+Skip these, I've already seen them: ${req.avoid.join('; ') || 'none'}.
 
 My preferences:
 ${describePrefs(req.preferences)}`;

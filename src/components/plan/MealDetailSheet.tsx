@@ -1,9 +1,9 @@
 import clsx from 'clsx';
-import { Clock, Lock, LockOpen, RefreshCw, Trash2 } from 'lucide-react';
+import { Clock, Lightbulb, Lock, LockOpen, RefreshCw, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Ingredient } from '../../../shared/types';
 import { prettyNumber } from '../../../shared/units';
-import { SLOT_META } from '../../lib/format';
+import { SLOT_META, money } from '../../lib/format';
 import { usePlan } from '../../store/plan';
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
@@ -23,7 +23,7 @@ function ingredientText(i: Ingredient, scale: number) {
   return `${prettyNumber(q)}${unit ? ' ' + unit : ''}`;
 }
 
-export function MealDetailSheet({ mealRef, onClose }: { mealRef: MealRef | null; onClose: () => void }) {
+export function MealDetailSheet({ mealRef, onClose, onBrowseIdeas }: { mealRef: MealRef | null; onClose: () => void; onBrowseIdeas: (ref: MealRef) => void }) {
   const plan = usePlan((s) => s.plan);
   const { toggleLock, regenerateMeal, setMealServings, removeMeal, status } = usePlan();
   const [hint, setHint] = useState('');
@@ -63,10 +63,13 @@ export function MealDetailSheet({ mealRef, onClose }: { mealRef: MealRef | null;
                 <RefreshCw size={15} className={clsx(pending && 'animate-spin')} /> Swap meal
               </Button>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <Button size="sm" variant={pm.locked ? 'soft' : 'secondary'} onClick={() => toggleLock(dayIndex, slot)}>
                 {pm.locked ? <Lock size={14} /> : <LockOpen size={14} />}
                 {pm.locked ? 'Locked: kept on regenerate' : 'Lock this meal'}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => onBrowseIdeas({ dayIndex, slot })} disabled={pm.locked}>
+                <Lightbulb size={14} className="text-butter-500" /> Browse ideas
               </Button>
               <Button size="sm" variant="danger" onClick={() => (removeMeal(dayIndex, slot), onClose())}>
                 <Trash2 size={14} /> Remove
@@ -81,6 +84,9 @@ export function MealDetailSheet({ mealRef, onClose }: { mealRef: MealRef | null;
           <div className="flex flex-wrap items-center gap-2">
             <span className={clsx('chip', SLOT_META[slot].tone)}>{SLOT_META[slot].label} · {day.label}</span>
             <span className="chip bg-surface-2 text-ink-soft"><Clock size={12} /> {meal.prepMinutes}m prep · {meal.cookMinutes}m cook</span>
+            {meal.estCostPerServing !== undefined && (
+              <span className="chip bg-butter-100 text-butter-800 dark:bg-butter-400/15 dark:text-butter-300">~{money(meal.estCostPerServing)}/serving</span>
+            )}
             {meal.tags.slice(0, 4).map((t) => (
               <span key={t} className="chip bg-surface-2 text-muted">{t}</span>
             ))}

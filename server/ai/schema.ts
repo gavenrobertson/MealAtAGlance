@@ -19,7 +19,7 @@ const ingredientSchema = {
 export const mealJsonSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['slot', 'title', 'description', 'emoji', 'prepMinutes', 'cookMinutes', 'baseServings', 'ingredients', 'steps', 'macros', 'tags'],
+  required: ['slot', 'title', 'description', 'emoji', 'prepMinutes', 'cookMinutes', 'baseServings', 'ingredients', 'steps', 'macros', 'estCostPerServing', 'tags'],
   properties: {
     slot: { type: 'string', enum: [...MEAL_SLOTS] },
     title: { type: 'string' },
@@ -36,6 +36,7 @@ export const mealJsonSchema = {
       required: ['calories', 'protein', 'carbs', 'fat'],
       properties: { calories: { type: 'number' }, protein: { type: 'number' }, carbs: { type: 'number' }, fat: { type: 'number' } },
     },
+    estCostPerServing: { type: 'number', description: 'Estimated US grocery cost per serving in dollars.' },
     tags: { type: 'array', items: { type: 'string' } },
   },
 } as const;
@@ -57,6 +58,13 @@ export const planJsonSchema = {
       },
     },
   },
+} as const;
+
+export const ideasJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['ideas'],
+  properties: { ideas: { type: 'array', items: mealJsonSchema } },
 } as const;
 
 export const singleMealJsonSchema = {
@@ -86,6 +94,7 @@ export const mealZ = z.object({
   ingredients: z.array(ingredient).min(1),
   steps: z.array(z.string()),
   macros: z.object({ calories: z.number(), protein: z.number(), carbs: z.number(), fat: z.number() }).optional(),
+  estCostPerServing: z.number().nonnegative().optional(),
   tags: z.array(z.string()),
 });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PREFERENCES } from '../../shared/types';
 import { RECIPES } from '../data/recipes';
-import { demoMeal, demoPlan } from './demo';
+import { demoIdeas, demoMeal, demoPlan } from './demo';
 
 const proteinOf = (title: string) => RECIPES.find((r) => r.title === title)!;
 
@@ -33,5 +33,26 @@ describe('demo planner', () => {
     const swapped = demoMeal({ request: '', preferences: DEFAULT_PREFERENCES, dayIndex: 0, slot: 'dinner', avoid: [first.days[0].dinner!.title] });
     expect(swapped.title).not.toBe(first.days[0].dinner!.title);
     expect(swapped.slot).toBe('dinner');
+  });
+});
+
+describe('demo ideas', () => {
+  const base = { request: '', preferences: DEFAULT_PREFERENCES, slot: 'dinner' as const, count: 6, goals: [], avoid: [] as string[] };
+
+  it('returns a batch of distinct ideas for the slot, then new ones on "more"', () => {
+    const first = demoIdeas(base);
+    expect(first).toHaveLength(6);
+    expect(new Set(first.map((m) => m.title)).size).toBe(6);
+    expect(first.every((m) => m.slot === 'dinner' && m.estCostPerServing! > 0)).toBe(true);
+    const more = demoIdeas({ ...base, avoid: first.map((m) => m.title) });
+    expect(more.length).toBeGreaterThan(0);
+    expect(more.some((m) => first.some((f) => f.title === m.title))).toBe(false);
+  });
+
+  it('ranks cheap ideas first for the low-cost goal', () => {
+    const cheap = demoIdeas({ ...base, count: 3, goals: ['low-cost'] });
+    const avg = (ms: { estCostPerServing?: number }[]) => ms.reduce((n, m) => n + m.estCostPerServing!, 0) / ms.length;
+    const all = RECIPES.filter((r) => r.slot === 'dinner').map((r) => ({ estCostPerServing: r.costPerServing }));
+    expect(avg(cheap)).toBeLessThan(avg(all));
   });
 });
