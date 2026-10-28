@@ -13,6 +13,8 @@ export interface Env {
   KROGER_CLIENT_ID?: string;
   KROGER_CLIENT_SECRET?: string;
   KROGER_LOCATION_ID?: string;
+  /** Defaults to production; use https://api-ce.kroger.com/v1 for the certification sandbox. */
+  KROGER_API_BASE?: string;
 
   INSTACART_API_KEY?: string;
   INSTACART_ENV?: 'development' | 'production';

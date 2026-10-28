@@ -6,3 +6,4 @@ dist
 !**/fixtures/*.pem
 .DS_Store
 .wrangler
+keys/

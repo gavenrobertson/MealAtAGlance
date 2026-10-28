@@ -10,14 +10,15 @@ import { ProviderError, type ProviderContext, type StoreProvider } from './types
  * so a locationId (or the user's ZIP) is required.
  * Also covers Kroger-family banners: Ralphs, Fred Meyer, King Soopers, Harris Teeter, Smith's, Fry's...
  */
-const API = 'https://api.kroger.com/v1';
+const DEFAULT_API = 'https://api.kroger.com/v1';
+const base = (env: Env) => (env.KROGER_API_BASE || DEFAULT_API).replace(/\/$/, '');
 
 let token: { value: string; expires: number } | undefined;
 const locations = new TTLCache<{ id: string; name: string }>(24 * 3600_000);
 
 async function getToken(env: Env): Promise<string> {
   if (token && token.expires > Date.now() + 60_000) return token.value;
-  const res = await fetch(`${API}/connect/oauth2/token`, {
+  const res = await fetch(`${base(env)}/connect/oauth2/token`, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${btoa(`${env.KROGER_CLIENT_ID}:${env.KROGER_CLIENT_SECRET}`)}`,
@@ -32,7 +33,7 @@ async function getToken(env: Env): Promise<string> {
 }
 
 async function call<T>(env: Env, path: string, params: Record<string, string>): Promise<T> {
-  const url = new URL(`${API}${path}`);
+  const url = new URL(`${base(env)}${path}`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const res = await fetch(url, { headers: { Authorization: `Bearer ${await getToken(env)}`, Accept: 'application/json' } });
   if (!res.ok) throw new ProviderError(`Kroger API ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`, res.status === 429 ? 429 : 502);
